@@ -85,11 +85,13 @@ class PhilosopherRunnable implements Runnable
 {
 	private int id;
 	private DiningPhilosophers dp;
-	
+	private Random randomizer; 
+
 	public PhilosopherRunnable(DiningPhilosophers dp, int id)
 	{
 		this.id = id;
 		this.dp = dp;
+		randomizer = new Random();
 	}
 	
 	public void run() 
@@ -99,9 +101,9 @@ class PhilosopherRunnable implements Runnable
             while (true) 
 			{
                 think();
-                acquireChopsticks();
+                dp.pickup(id);
                 eat();
-                releaseChopsticks();
+                dp.putdown(id);
             }
 		}
 		catch(InterruptedException e)
@@ -118,7 +120,7 @@ class PhilosopherRunnable implements Runnable
 		{
 			System.out.println("Philosopher " + id + " is thinking.\n");
 			System.out.flush();
-			Thread.sleep(randomizer.nextInt(1000));
+			Thread.sleep(randomizer.nextInt(5000));
 		}
 		catch(InterruptedException e)
 		{
@@ -133,7 +135,7 @@ class PhilosopherRunnable implements Runnable
 		{
 			System.out.println("Philosopher " + id + " is eating.\n");
 			System.out.flush();
-			Thread.sleep(randomizer.nextInt(1000));
+			Thread.sleep(randomizer.nextInt(5000));
 		}
 		catch(InterruptedException e)
 		{
@@ -148,38 +150,51 @@ class DiningPhilosophers
 	private State[] states;
 	private Philosopher[] self;
 
-	public DiningPhilosophers(Philosophers[] self)
+	public DiningPhilosophers(Philosopher[] self)
 	{
 		this.self = self;
 		this.states = new State[5];
-		for(int i = 0; i < 5, i++)
+		for(int i = 0; i < 5; i++)
 			states[i] = State.THINKING;
 	}
 
 	void pickup(int i)
 	{
-		state[i] = State.EATING;
+		states[i] = State.HUNGRY;
 		test(i);
-		if(state[i] != State.EATING)
-			self[i].acquireChopsticks();
+		if(states[i] != State.EATING)
+		{
+			try{
+				self[i].acquireChopsticks();
+			}
+			catch(InterruptedException e){
+				e.printStackTrace();
+			}
+		}
+			
 	}
 
 	void putdown(int i)
 	{
-		state[i] = State.THINKING;
+		states[i] = State.THINKING;
 		test((i + 4) % 5);
 		test((i + 1) % 5);
 	}
 
 	void test(int i)
 	{
-		boolean left = state[(i + 4) % 5] != State.EATING;
-		boolean right = state[(i + 1) % 5] != State.EATING;
-		boolean center = state[i] == State.HUNGRY;
+		boolean left = states[(i + 4) % 5] != State.EATING;
+		boolean right = states[(i + 1) % 5] != State.EATING;
+		boolean center = states[i] == State.HUNGRY;
 		if(left && right && center)
 		{
-			state[i] = State.EATING;
-			self[i].releaseChopsticks();
+			states[i] = State.EATING;
+			try{
+				self[i].releaseChopsticks();
+			}
+			catch(InterruptedException e){
+				e.printStackTrace();
+			}
 		}
 	}
 }
