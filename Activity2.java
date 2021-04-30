@@ -40,7 +40,7 @@ public class Activity2
     }
 }
 
-class Philosopher implements Runnable 
+class Philosopher 
 {
     private int id;
     private Semaphore leftChopstick;
@@ -55,9 +55,44 @@ class Philosopher implements Runnable
         this.rightChopstick = rightChopstick;
 		randomizer = new Random();
     }
+	
+	
+    public void acquireChopsticks() throws InterruptedException
+	{
+		try
+		{
+			leftChopstick.acquire();
+			rightChopstick.acquire();
+			System.out.println("Philosopher " + id + " acquired its left and right chopsticks.\n");
+			System.out.flush();
+		}
+		catch(InterruptedException e)
+		{
+			e.printStackTrace();
+		}
+	}
 
+    
+    public void releaseChopsticks() throws InterruptedException
+	{
+		leftChopstick.release();
+		rightChopstick.release();
+		System.out.println("Philosopher " + id + " released its left and right chopsticks.\n");
+    }
+}
 
-    public void run() 
+class PhilosopherRunnable implements Runnable
+{
+	private int id;
+	private DiningPhilosophers dp;
+	
+	public PhilosopherRunnable(DiningPhilosophers dp, int id)
+	{
+		this.id = id;
+		this.dp = dp;
+	}
+	
+	public void run() 
 	{
         try
 		{
@@ -90,26 +125,9 @@ class Philosopher implements Runnable
 			e.printStackTrace();
 		}
     }
-
 	
 	
-    public void acquireChopsticks() throws InterruptedException
-	{
-		try
-		{
-			leftChopstick.acquire();
-			rightChopstick.acquire();
-			System.out.println("Philosopher " + id + " acquired its left and right chopsticks.\n");
-			System.out.flush();
-		}
-		catch(InterruptedException e)
-		{
-			e.printStackTrace();
-		}
-	}
-	
-	
-    public void eat()
+	public void eat()
 	{
 		try
 		{
@@ -121,14 +139,6 @@ class Philosopher implements Runnable
 		{
 			e.printStackTrace();
 		}
-    }
-
-    
-    public void releaseChopsticks() throws InterruptedException
-	{
-		leftChopstick.release();
-		rightChopstick.release();
-		System.out.println("Philosopher " + id + " released its left and right chopsticks.\n");
     }
 }
 
