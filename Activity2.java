@@ -16,7 +16,9 @@ public class Activity2
     public static int LIMIT = 5;
 
     public static void main(String[] args) 
-	{
+		{
+				DiningPhilosophers dp;
+				PhilosopherRunnable[] runnables = new PhilosopherRunnable[LIMIT];
         Semaphore[] chopsticks = new Semaphore[LIMIT];
 
         for(int i = 0; i < LIMIT; i++)
@@ -26,8 +28,15 @@ public class Activity2
 
         for(int i = 0; i < LIMIT; i++) {
             philosophers[i] = new Philosopher(i, chopsticks[i], chopsticks[(i + 1) % LIMIT]);
-            new Thread(philosophers[i]).start();
+            //new Thread(philosophers[i]).start();
         }
+
+				dp = new DiningPhilosophers(philosophers);
+
+				for(int i = 0; i < LIMIT; i++) {
+					runnables[i] = new PhilosopherRunnable(dp, i);
+					new Thread(runnables[i]).start();
+				}
     }
 }
 
@@ -121,4 +130,46 @@ class Philosopher implements Runnable
 		rightChopstick.release();
 		System.out.println("Philosopher " + id + " released its left and right chopsticks.\n");
     }
+}
+
+class DiningPhilosophers
+{
+	enum State{THINKING, HUNGRY, EATING};
+	private State[] states;
+	private Philosopher[] self;
+
+	public DiningPhilosophers(Philosophers[] self)
+	{
+		this.self = self;
+		this.states = new State[5];
+		for(int i = 0; i < 5, i++)
+			states[i] = State.THINKING;
+	}
+
+	void pickup(int i)
+	{
+		state[i] = State.EATING;
+		test(i);
+		if(state[i] != State.EATING)
+			self[i].acquireChopsticks();
+	}
+
+	void putdown(int i)
+	{
+		state[i] = State.THINKING;
+		test((i + 4) % 5);
+		test((i + 1) % 5);
+	}
+
+	void test(int i)
+	{
+		boolean left = state[(i + 4) % 5] != State.EATING;
+		boolean right = state[(i + 1) % 5] != State.EATING;
+		boolean center = state[i] == State.HUNGRY;
+		if(left && right && center)
+		{
+			state[i] = State.EATING;
+			self[i].releaseChopsticks();
+		}
+	}
 }
