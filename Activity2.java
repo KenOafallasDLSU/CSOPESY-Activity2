@@ -120,7 +120,7 @@ class PhilosopherRunnable implements Runnable
 		{
 			System.out.println("Philosopher " + id + " is thinking.\n");
 			System.out.flush();
-			Thread.sleep(randomizer.nextInt(5000));
+			Thread.sleep(randomizer.nextInt(2000));
 		}
 		catch(InterruptedException e)
 		{
@@ -135,7 +135,7 @@ class PhilosopherRunnable implements Runnable
 		{
 			System.out.println("Philosopher " + id + " is eating.\n");
 			System.out.flush();
-			Thread.sleep(randomizer.nextInt(5000));
+			Thread.sleep(randomizer.nextInt(2000));
 		}
 		catch(InterruptedException e)
 		{
@@ -148,53 +148,71 @@ class DiningPhilosophers
 {
 	enum State{THINKING, HUNGRY, EATING};
 	private State[] states;
-	private Philosopher[] self;
+	private Philosopher[] philos;
+	private Semaphore[] self;
 
-	public DiningPhilosophers(Philosopher[] self)
+	public DiningPhilosophers(Philosopher[] philos)
 	{
-		this.self = self;
+		this.philos = philos;
 		this.states = new State[5];
+		this.self = new Semaphore[5];
 		for(int i = 0; i < 5; i++)
 			states[i] = State.THINKING;
+		for(int i = 0; i < 5; i++)
+			self[i] = new Semaphore(1);
 	}
 
 	void pickup(int i)
 	{
 		states[i] = State.HUNGRY;
-		test(i);
-		if(states[i] != State.EATING)
+		if(test(i) == 1)
 		{
 			try{
-				self[i].acquireChopsticks();
+				philos[i].acquireChopsticks();
 			}
 			catch(InterruptedException e){
 				e.printStackTrace();
 			}
 		}
-			
+
+		if(states[i] != State.EATING)
+		{
+			try{
+				self[i].acquire();
+				philos[i].acquireChopsticks();
+			}
+			catch(InterruptedException e){
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 	void putdown(int i)
 	{
 		states[i] = State.THINKING;
+		try{
+			philos[i].releaseChopsticks();
+		}
+		catch(InterruptedException e){
+			e.printStackTrace();
+		}
 		test((i + 4) % 5);
 		test((i + 1) % 5);
 	}
 
-	void test(int i)
+	int test(int i)
 	{
 		boolean left = states[(i + 4) % 5] != State.EATING;
 		boolean right = states[(i + 1) % 5] != State.EATING;
 		boolean center = states[i] == State.HUNGRY;
+
 		if(left && right && center)
 		{
 			states[i] = State.EATING;
-			try{
-				self[i].releaseChopsticks();
-			}
-			catch(InterruptedException e){
-				e.printStackTrace();
-			}
+			self[i].release();
+			return 1;
 		}
+		return 0;
 	}
 }
